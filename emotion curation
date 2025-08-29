@@ -1,0 +1,248 @@
+import React, { useState, useEffect, useCallback } from 'react';
+
+// --- 아이콘 (lucide-react 시뮬레이션) ---
+const Play = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="5 3 19 12 5 21 5 3"/></svg>
+);
+const Pause = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+);
+const ArrowLeft = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+);
+const HomeIcon = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+);
+
+
+// --- src/data/... ---
+const actionItems = [
+    {id: 'breath_1', type: 'breath', durationSec: 60, title: '편안한 호흡 1분', copy: '숨을 4초간 들이마시고, 6초간 내쉬며 몸의 긴장을 풀어보세요.'},
+    {id: 'self_compassion_1', type: 'journal', durationSec: 120, title: '자기친절 스크립트 2분', copy: '따뜻한 컵을 잡고, 이 순간을 견디는 나를 따뜻하게 안아주세요.'}
+];
+
+const assessmentChapters = [
+    { id: 'CH1', title: '감정 명료화', description: '내 감정을 얼마나 선명하게 인식하고 이름 붙일 수 있나요?' },
+    { id: 'CH2', title: '트리거 인식', description: '내 감정을 움직이는 내/외부 신호를 얼마나 잘 아나요?' },
+    { id: 'CH3', title: '몸감각 & 내장감각', description: '몸이 보내는 미세한 신호를 감지와 연결하나요?' },
+    { id: 'CH4', title: '스트레스 & 활성도 조절', description: '감정의 파도를 얼마나 능숙하게 다루나요?' },
+    { id: 'CH5', title: '자기자비 & 자기대화', description: '스스로에게 얼마나 따뜻한 친구가 되어주나요?' },
+    { id: 'CH6', title: '관계 & 경계', description: '건강한 관계를 위한 감정 소통 능력을 점검해요.' },
+];
+
+const assessmentQuestions = {
+    'CH1': [{ id: 'q1_1', text: '지금 감정을 한 단어로 집어넣는 것이 어렵지 않다.' }, { id: 'q1_2', text: '한 상황에서 복합 감정(예: 안도+불안)을 구분할 수 있다.' }, { id: 'q1_3', text: '감정과 생각을 별개로 인식한다.' }],
+    'CH2': [{ id: 'q2_1', text: '반복적으로 나를 흔드는 사람/상황을 알고 있다.' }, { id: 'q2_2', text: '업무/시간압박이 내 감정에 미치는 영향을 파악한다.' }, { id: 'q2_3', text: '날씨·소음·장소 등 환경 트리거를 자주 메모한다.' }],
+    'CH3': [{ id: 'q3_1', text: '심박/호흡/어깨 긴장 변화를 인지한다.' }, { id: 'q3_2', text: '속쓰림/속울렁임/두통 등 미세 신호를 감정과 연결한다.' }, { id: 'q3_3', text: '긴장이 쌓인 부위를 손으로 찾을 수 있다.' }],
+    'CH4': [{ id: 'q4_1', text: '흥분·긴장 상태에서 스스로 진정시키는 법을 안다.' }, { id: 'q4_2', text: '저활성(무기력)일 때 에너지를 깨우는 루틴이 있다.' }, { id: 'q4_3', text: '집중이 흐트러질 때 다음 행동 1개를 정한다.' }],
+    'CH5': [{ id: 'q5_1', text: '실수했을 때 자신에게 모진 말을 줄일 수 있다.' }, { id: 'q5_2', text: '친한 친구에게 하듯 나에게 말한다.' }, { id: 'q5_3', text: '감정을 느끼는 나를 비난하지 않는다.' }],
+    'CH6': [{ id: 'q6_1', text: '불편한 대화에서 사실/느낌/욕구/요청을 구분한다.' }, { id: 'q6_2', text: '거절을 미루지 않고 대안을 제시한다.' }, { id: 'q6_3', text: '나의 한계/에너지 상태를 공유한다.' }],
+};
+
+
+// --- src/lib/db.ts (localStorage 시뮬레이션) ---
+const db = {
+  get: async (key) => { try { const i = window.localStorage.getItem(key); return i ? JSON.parse(i) : undefined; } catch (e) { console.error(e); return undefined; } },
+  set: async (key, value) => { try { window.localStorage.setItem(key, JSON.stringify(value)); } catch (e) { console.error(e); } },
+};
+
+const saveAssessmentResult = (result) => db.set(`assessment_result-${result.chapterId}`, result);
+const getAllAssessmentResults = async () => {
+    const results = {};
+    for (const chapter of assessmentChapters) {
+        const result = await db.get(`assessment_result-${chapter.id}`);
+        if (result) results[chapter.id] = result;
+    }
+    return results;
+}
+const saveEntry = (entry) => {
+    db.set(`entry-${entry.id}`, entry);
+    db.set('latest_entry_id', entry.id);
+};
+
+// --- 목업 데이터 설정 함수 ---
+const setupMockData = async () => {
+    const isMockDataSetup = await db.get('mock_data_setup_complete');
+    if (isMockDataSetup) return;
+    const mockEntry = { id: 'entry-mock-1', userId: 'user-mira', ts: new Date().toISOString(), primaryEmotion: '편안함', emotionDetail: '만족', intensity: 4, triggers: ['좋은 날씨'], body: ['몸이 가벼움'] };
+    await saveEntry(mockEntry);
+    await saveAssessmentResult({ chapterId: 'CH1', totalScore: 32, level: 'Clear' });
+    await saveAssessmentResult({ chapterId: 'CH2', totalScore: 25, level: 'Growing' });
+    await db.set('mock_data_setup_complete', true);
+};
+
+// --- 공용 UI 컴포넌트 ---
+const Card = ({ children, className = '' }) => (<div className={`bg-white dark:bg-slate-800 rounded-2xl shadow-soft p-6 sm:p-8 ${className}`}>{children}</div>);
+const Button = ({ children, onClick, className = '', variant = 'default' }) => {
+    const variants = {
+        default: 'bg-indigo-600 text-white hover:bg-indigo-700',
+        secondary: 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-50 hover:bg-slate-200 dark:hover:bg-slate-600',
+        ghost: 'hover:bg-slate-100 dark:hover:bg-slate-700',
+    };
+    return (<button onClick={onClick} className={`px-4 py-2 rounded-lg font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 ${variants[variant]} ${className}`}>{children}</button>);
+};
+
+// --- 페이지별 컴포넌트 ---
+
+// 1. 홈 페이지
+const HomePage = ({ setCurrentPage }) => (
+    <div className="text-center max-w-md mx-auto">
+        <h1 className="text-4xl font-bold text-slate-800 dark:text-slate-100 mb-2">마음팔레트 🎨</h1>
+        <p className="text-slate-600 dark:text-slate-400 mb-12">오늘 하루 어땠나요? 당신의 마음을 기록하고 돌봐주세요.</p>
+        <div className="space-y-4">
+            <Button onClick={() => setCurrentPage('check-in')} className="w-full !py-3 !text-lg">
+                오늘의 마음 체크인하기
+            </Button>
+            <Button onClick={() => setCurrentPage('assessment')} className="w-full !py-3 !text-lg" variant="secondary">
+                마음 근력 진단하기
+            </Button>
+             <Button onClick={() => setCurrentPage('report')} className="w-full mt-8" variant="ghost">
+                최근 리포트 보기
+            </Button>
+        </div>
+    </div>
+);
+
+// 2. 체크인 페이지
+const CheckInPage = ({ onComplete }) => {
+    const [step, setStep] = useState(1);
+    const [entry, setEntry] = useState({ primaryEmotion: '', intensity: 5, triggers: [], body: [], emotionDetail: '' });
+
+    const EmotionPaletteWheel = ({ onSelectEmotion }) => {
+        const emotions = [ { name: '기쁨', color: '#FFD700' }, { name: '설렘', color: '#FFA500' }, { name: '분노', color: '#DC143C' }, { name: '슬픔', color: '#6495ED' }, { name: '불안', color: '#9370DB' }, { name: '편안', color: '#3CB371' }];
+        return (
+            <div className="flex justify-center items-center my-8">
+                <svg width="300" height="300" viewBox="0 0 300 300">{emotions.map((emotion, i) => {
+                    const angle = (i / emotions.length) * 2 * Math.PI - Math.PI / 2;
+                    const x = 150 + 120 * Math.cos(angle); const y = 150 + 120 * Math.sin(angle);
+                    return (<g key={emotion.name} onClick={() => onSelectEmotion(emotion.name)} className="cursor-pointer group"><circle cx={x} cy={y} r="40" fill={emotion.color} className="transition-transform duration-200 group-hover:scale-110"/>
+                    <text x={x} y={y} textAnchor="middle" dy="0.3em" className="text-sm font-bold pointer-events-none select-none" fill="#fff">{emotion.name}</text></g>);})}
+                </svg>
+            </div>
+        );
+    };
+    const IntensitySlider = ({ value, onChange }) => (<div className="w-full my-6"><label htmlFor="intensity" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">감정 강도: {value} / 10</label><input id="intensity" type="range" min="0" max="10" step="1" value={value} onChange={(e) => onChange(parseInt(e.target.value, 10))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer dark:bg-slate-700"/></div>);
+    const TagChips = ({ title, tags, selectedTags, onToggleTag }) => (<div className="my-6"><h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-3">{title}</h3><div className="flex flex-wrap gap-2">{tags.map(tag => (<button key={tag} onClick={() => onToggleTag(tag)} className={`px-3 py-1.5 text-sm rounded-full transition-colors ${selectedTags.includes(tag) ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-700 hover:bg-slate-200'}`}>{tag}</button>))}</div></div>);
+
+    const handleSelectEmotion = (emotion) => { setEntry(prev => ({ ...prev, primaryEmotion: emotion })); setStep(2); };
+    const handleIntensityChange = (value) => setEntry(prev => ({ ...prev, intensity: value }));
+    const handleToggleTag = (tag, type) => setEntry(prev => ({ ...prev, [type]: prev[type].includes(tag) ? prev[type].filter(t => t !== tag) : [...prev[type], tag] }));
+    const submitCheckIn = () => {
+        const fullEntry = { ...entry, id: `entry-${Date.now()}`, userId: 'user-mira', ts: new Date().toISOString() };
+        saveEntry(fullEntry);
+        onComplete();
+    };
+
+    return (
+        <Card className="max-w-xl mx-auto">
+            {step === 1 && (<div><h2 className="text-2xl font-bold text-center mb-4">지금 어떤 감정을 느끼시나요?</h2><EmotionPaletteWheel onSelectEmotion={handleSelectEmotion} /></div>)}
+            {step === 2 && (<div><h2 className="text-2xl font-bold text-center mb-6">선택한 감정: <span className="text-indigo-600">{entry.primaryEmotion}</span></h2><IntensitySlider value={entry.intensity} onChange={handleIntensityChange} /><Button onClick={() => setStep(3)} className="mt-8 w-full">다음</Button></div>)}
+            {step === 3 && (<div className="space-y-6"><h2 className="text-2xl font-bold text-center mb-4">감정에 영향을 준 것이 있나요?</h2><TagChips title="상황이나 사건 (트리거)" tags={['일/공부', '사람 관계', '건강', '미래', '좋은 날씨']} selectedTags={entry.triggers} onToggleTag={(tag) => handleToggleTag(tag, 'triggers')}/><TagChips title="몸의 신호" tags={['피곤함', '가슴 답답', '몸이 가벼움', '두통']} selectedTags={entry.body} onToggleTag={(tag) => handleToggleTag(tag, 'body')}/><Button onClick={submitCheckIn} className="mt-8 w-full">리포트 생성하기</Button></div>)}
+        </Card>
+    );
+};
+
+
+// 3. 진단 페이지
+const AssessmentPage = ({ onComplete }) => {
+    const [chapterId, setChapterId] = useState(null);
+    const [answers, setAnswers] = useState({});
+    const [result, setResult] = useState(null);
+
+    if (result) {
+        return (<Card className="text-center"><h2 className="text-2xl font-bold mb-4">{result.chapterTitle} 진단 완료!</h2><p className="text-4xl font-bold my-6">{result.totalScore} / {assessmentQuestions[chapterId].length * 4}</p><p className="text-slate-600">{result.level}</p><Button onClick={() => onComplete()} className="w-full mt-6">전체 리포트 보기</Button><Button onClick={() => {setResult(null); setChapterId(null);}} className="w-full mt-2" variant="secondary">다른 챕터 진단하기</Button></Card>);
+    }
+
+    if (chapterId) {
+        const questions = assessmentQuestions[chapterId] || [];
+        const handleAnswer = (qId, score) => setAnswers(prev => ({...prev, [qId]: score}));
+        const handleSubmit = () => {
+            const totalScore = Object.values(answers).reduce((sum, val) => sum + val, 0);
+            const level = totalScore > questions.length * 3 ? 'Clear' : totalScore > questions.length * 2 ? 'Growing' : totalScore > questions.length * 1 ? 'Emerging' : 'Seed';
+            const newResult = { chapterId, chapterTitle: assessmentChapters.find(c=>c.id===chapterId).title, answers, totalScore, level, ts: new Date().toISOString() };
+            saveAssessmentResult(newResult);
+            setResult(newResult);
+        }
+        return (<Card><Button onClick={() => setChapterId(null)} variant="ghost" className="mb-4"><ArrowLeft className="inline-block mr-2"/>챕터 선택으로</Button><h2 className="text-2xl font-bold text-center mb-6">{assessmentChapters.find(c=>c.id===chapterId).title}</h2><div className="space-y-6">{questions.map(q => (<div key={q.id}><p>{q.text}</p><div className="flex justify-between mt-2">{[0,1,2,3,4].map(score => <button key={score} onClick={() => handleAnswer(q.id, score)} className={`w-10 h-10 rounded-full transition-colors ${answers[q.id] === score ? 'bg-indigo-600 text-white' : 'bg-slate-100 hover:bg-slate-200'}`}>{score}</button>)}</div></div>))}</div><Button onClick={handleSubmit} disabled={Object.keys(answers).length < questions.length} className="w-full mt-8">결과 보기</Button></Card>);
+    }
+
+    return (<Card><h2 className="text-2xl font-bold text-center mb-6">마음 근력 진단</h2><p className="text-center text-slate-600 mb-8">나의 마음에 대해 더 깊이 이해하기 위한 6가지 챕터를 탐색해보세요.</p><div className="space-y-3">{assessmentChapters.map(c => <button key={c.id} onClick={()=>setChapterId(c.id)} className="w-full text-left p-4 bg-slate-50 dark:bg-slate-700 rounded-lg hover:bg-slate-100"><p className="font-semibold">{c.title}</p><p className="text-sm text-slate-500">{c.description}</p></button>)}</div></Card>);
+}
+
+
+// 4. 원페이지 리포트 (기존 컴포넌트와 동일, onGoHome 프롭 추가)
+const OnePageReport = ({ latestEntry, assessmentResults, userName, onGoHome }) => {
+    const RadarChart = ({ data }) => {
+        const size = 280; const center = size / 2; const total = Object.keys(data).length; if(total === 0) return <div className="w-full h-72 bg-slate-100 rounded-lg flex items-center justify-center"><p>진단 데이터가 없어요.</p></div>;
+        const points = Object.values(data).map((value, i) => { const angle = (i / total) * 2 * Math.PI - Math.PI / 2; const score = value.totalScore || 0; const x = center + (score / (assessmentQuestions[value.chapterId].length*4) * (center - 20)) * Math.cos(angle); const y = center + (score / (assessmentQuestions[value.chapterId].length*4) * (center - 20)) * Math.sin(angle); return `${x},${y}`; }).join(' ');
+        const labels = Object.keys(data).map((key, i) => { const angle = (i / total) * 2 * Math.PI - Math.PI / 2; const x = center + (center - 5) * Math.cos(angle); const y = center + (center - 5) * Math.sin(angle); return <text key={key} x={x} y={y} fontSize="12" textAnchor="middle" dy="0.3em" className="fill-slate-600 dark:fill-slate-400 font-semibold">{assessmentChapters.find(c=>c.id===key).title}</text>; });
+        return (<div className="flex justify-center items-center"><svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>{ [...Array(4)].map((_, i) => (<circle key={i} cx={center} cy={center} r={(i + 1) * (center-20)/4} fill="none" className="stroke-slate-200 dark:stroke-slate-700" strokeWidth="1"/>))}{labels}<polygon points={points} className="fill-indigo-500/30 stroke-indigo-600" strokeWidth="2" /></svg></div>);
+    };
+    const MicroActionTimer = ({ action, onComplete }) => {
+        const { durationSec, title, copy } = action; const [timeLeft, setTimeLeft] = useState(durationSec); const [isActive, setIsActive] = useState(false);
+        useEffect(() => { let interval = null; if (isActive && timeLeft > 0) { interval = setInterval(() => setTimeLeft(t => t - 1), 1000); } else if (timeLeft === 0 && isActive) { setIsActive(false); onComplete(); } return () => clearInterval(interval); }, [isActive, timeLeft, onComplete]);
+        return (<Card className="text-center bg-indigo-50 dark:bg-slate-700 border border-indigo-200 dark:border-slate-600"><h3 className="text-lg font-bold text-indigo-800 dark:text-indigo-200">{title}</h3><p className="text-slate-600 dark:text-slate-400 mt-2 mb-6">{copy}</p><div className="text-6xl font-mono font-bold text-indigo-600 dark:text-indigo-400 my-4">{String(Math.floor(timeLeft / 60)).padStart(2, '0')}:{String(timeLeft % 60).padStart(2, '0')}</div><Button onClick={() => setIsActive(!isActive)} className="w-24">{isActive ? <Pause className="inline-block"/> : <Play className="inline-block"/>}{isActive ? '일시정지' : '시작'}</Button></Card>);
+    };
+    const recommendedAction = latestEntry?.intensity >= 7 ? actionItems[1] : actionItems[0];
+    return (<div className="max-w-2xl mx-auto space-y-8"><header className="text-center pt-8"><h1 className="text-4xl font-bold text-slate-800 dark:text-slate-100">오늘의 마음 리포트 📝</h1><p className="mt-2 text-slate-600 dark:text-slate-400">{userName}님, 오늘 하루도 수고 많으셨어요.</p></header><Card><h2 className="text-2xl font-bold mb-4 flex items-center">오늘의 마음 요약 {latestEntry?.intensity >= 7 ? '😔' : '😊'}</h2><div className="bg-slate-50 dark:bg-slate-700/50 p-6 rounded-xl space-y-4"><div className="flex justify-between items-baseline"><span className="text-slate-500">주요 감정</span><span className="text-xl font-bold text-indigo-600 dark:text-indigo-400">{latestEntry?.primaryEmotion}</span></div><div className="flex justify-between items-baseline"><span className="text-slate-500">감정 강도</span><div className="flex items-center gap-2"><div className="w-32 h-2.5 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden"><div className="h-full bg-red-400" style={{width: `${(latestEntry?.intensity || 0) * 10}%`}}></div></div><span className="font-bold w-6 text-right">{latestEntry?.intensity}/10</span></div></div><div className="flex justify-between items-baseline"><span className="text-slate-500">영향을 준 것</span><span className="font-semibold text-slate-700 dark:text-slate-300">{latestEntry?.triggers?.join(', ')}</span></div><div className="flex justify-between items-baseline"><span className="text-slate-500">몸의 신호</span><span className="font-semibold text-slate-700 dark:text-slate-300">{latestEntry?.body?.join(', ')}</span></div></div></Card><Card><h2 className="text-2xl font-bold mb-4 flex items-center">잠시 쉬어가요 🧘‍♀️</h2><p className="text-slate-600 dark:text-slate-400 mb-6">지금의 감정을 돌보기 위해 잠시 시간을 가져보는 건 어때요? 작은 행동 하나가 큰 변화를 만들 수 있어요.</p><MicroActionTimer action={recommendedAction} onComplete={() => alert("잘 하셨어요! 마음이 한결 편안해졌을 거예요.")} /></Card><Card><h2 className="text-2xl font-bold mb-2 flex items-center">나의 성장 기록 🌱</h2><p className="text-slate-600 dark:text-slate-400 mb-6">진단 테스트를 통해 알아본 {userName}님의 마음 근력이에요. 골고루 성장하고 있는지 살펴보세요.</p><RadarChart data={assessmentResults} /><div className="mt-6 space-y-3">{Object.entries(assessmentResults).map(([key, value]) => (<div key={key} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg"><span className="font-semibold text-slate-700 dark:text-slate-300">{assessmentChapters.find(c=>c.id===key).title}</span><div className="flex items-center gap-3"><span className="text-xs font-bold text-indigo-500">{value.level}</span><span className="font-bold text-slate-800 dark:text-slate-100 w-12 text-right">{value.totalScore}/{assessmentQuestions[key].length * 4}</span></div></div>))}</div></Card>
+        <div className="text-center py-4"><Button onClick={onGoHome} variant="secondary"><HomeIcon className="inline-block mr-2"/>처음으로</Button></div>
+    </div>);
+};
+
+
+// --- 메인 App 컴포넌트 ---
+export default function App() {
+    const [currentPage, setCurrentPage] = useState('home'); // home, check-in, assessment, report
+    const [isLoading, setIsLoading] = useState(true);
+    const [reportData, setReportData] = useState({ latestEntry: null, assessmentResults: {}, userName: "미라" });
+
+    const refreshReportData = useCallback(async () => {
+        setIsLoading(true);
+        const latestEntryId = await db.get('latest_entry_id');
+        const entry = latestEntryId ? await db.get(`entry-${latestEntryId}`) : null;
+        const assessments = await getAllAssessmentResults();
+        setReportData(prev => ({ ...prev, latestEntry: entry, assessmentResults: assessments }));
+        setIsLoading(false);
+    }, []);
+
+    useEffect(() => {
+        const initialize = async () => {
+            await setupMockData();
+            refreshReportData();
+        };
+        initialize();
+    }, [refreshReportData]);
+    
+    const handleFlowComplete = () => {
+        refreshReportData();
+        setCurrentPage('report');
+    };
+
+    const renderPage = () => {
+        if (isLoading) {
+            return <div className="flex items-center justify-center h-full text-slate-500">마음 리포트를 불러오는 중...</div>;
+        }
+        
+        switch (currentPage) {
+            case 'check-in': return <CheckInPage onComplete={handleFlowComplete} />;
+            case 'assessment': return <AssessmentPage onComplete={handleFlowComplete} />;
+            case 'report': return <OnePageReport {...reportData} onGoHome={() => setCurrentPage('home')} />;
+            case 'home':
+            default: return <HomePage setCurrentPage={setCurrentPage} />;
+        }
+    };
+
+    return (
+        <div className="bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-slate-50 min-h-screen font-sans">
+            <main className="container mx-auto px-4 py-8 md:py-12 flex-grow flex flex-col justify-center">
+                {renderPage()}
+            </main>
+            <footer className="text-xs text-center text-slate-400 dark:text-slate-500 p-8">
+                <p>이 앱은 의료적 조언을 대체하지 않습니다. 전문가의 도움이 필요하면 관련 기관에 문의하세요.</p>
+                <p className="mt-2">© 2025 마음팔레트</p>
+            </footer>
+        </div>
+    );
+}
+
+
