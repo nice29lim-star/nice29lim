@@ -1,0 +1,264 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2575.7">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  </style>
+</head>
+<body>
+<p class="p1">import React, { useState, useEffect, useCallback } from 'react';</p>
+<p class="p2"><br></p>
+<p class="p1">// --- 아이콘 (lucide-react 시뮬레이션) ---</p>
+<p class="p1">const Play = (props) =&gt; (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}&gt;&lt;polygon points="5 3 19 12 5 21 5 3"/&gt;&lt;/svg&gt;</p>
+<p class="p1">);</p>
+<p class="p1">const Pause = (props) =&gt; (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}&gt;&lt;rect x="6" y="4" width="4" height="16"/&gt;&lt;rect x="14" y="4" width="4" height="16"/&gt;&lt;/svg&gt;</p>
+<p class="p1">);</p>
+<p class="p1">const ArrowLeft = (props) =&gt; (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}&gt;&lt;path d="m12 19-7-7 7-7"/&gt;&lt;path d="M19 12H5"/&gt;&lt;/svg&gt;</p>
+<p class="p1">);</p>
+<p class="p1">const HomeIcon = (props) =&gt; (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}&gt;&lt;path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/&gt;&lt;polyline points="9 22 9 12 15 12 15 22"/&gt;&lt;/svg&gt;</p>
+<p class="p1">);</p>
+<p class="p2"><br></p>
+<p class="p2"><br></p>
+<p class="p1">// --- src/data/... ---</p>
+<p class="p1">const actionItems = [</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{id: 'breath_1', type: 'breath', durationSec: 60, title: '편안한 호흡 1분', copy: '숨을 4초간 들이마시고, 6초간 내쉬며 몸의 긴장을 풀어보세요.'},</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{id: 'self_compassion_1', type: 'journal', durationSec: 120, title: '자기친절 스크립트 2분', copy: '따뜻한 컵을 잡고, 이 순간을 견디는 나를 따뜻하게 안아주세요.'}</p>
+<p class="p1">];</p>
+<p class="p2"><br></p>
+<p class="p1">const assessmentChapters = [</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{ id: 'CH1', title: '감정 명료화', description: '내 감정을 얼마나 선명하게 인식하고 이름 붙일 수 있나요?' },</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{ id: 'CH2', title: '트리거 인식', description: '내 감정을 움직이는 내/외부 신호를 얼마나 잘 아나요?' },</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{ id: 'CH3', title: '몸감각 &amp; 내장감각', description: '몸이 보내는 미세한 신호를 감지와 연결하나요?' },</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{ id: 'CH4', title: '스트레스 &amp; 활성도 조절', description: '감정의 파도를 얼마나 능숙하게 다루나요?' },</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{ id: 'CH5', title: '자기자비 &amp; 자기대화', description: '스스로에게 얼마나 따뜻한 친구가 되어주나요?' },</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{ id: 'CH6', title: '관계 &amp; 경계', description: '건강한 관계를 위한 감정 소통 능력을 점검해요.' },</p>
+<p class="p1">];</p>
+<p class="p2"><br></p>
+<p class="p1">const assessmentQuestions = {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>'CH1': [{ id: 'q1_1', text: '지금 감정을 한 단어로 집어넣는 것이 어렵지 않다.' }, { id: 'q1_2', text: '한 상황에서 복합 감정(예: 안도+불안)을 구분할 수 있다.' }, { id: 'q1_3', text: '감정과 생각을 별개로 인식한다.' }],</p>
+<p class="p1"><span class="Apple-converted-space">    </span>'CH2': [{ id: 'q2_1', text: '반복적으로 나를 흔드는 사람/상황을 알고 있다.' }, { id: 'q2_2', text: '업무/시간압박이 내 감정에 미치는 영향을 파악한다.' }, { id: 'q2_3', text: '날씨·소음·장소 등 환경 트리거를 자주 메모한다.' }],</p>
+<p class="p1"><span class="Apple-converted-space">    </span>'CH3': [{ id: 'q3_1', text: '심박/호흡/어깨 긴장 변화를 인지한다.' }, { id: 'q3_2', text: '속쓰림/속울렁임/두통 등 미세 신호를 감정과 연결한다.' }, { id: 'q3_3', text: '긴장이 쌓인 부위를 손으로 찾을 수 있다.' }],</p>
+<p class="p1"><span class="Apple-converted-space">    </span>'CH4': [{ id: 'q4_1', text: '흥분·긴장 상태에서 스스로 진정시키는 법을 안다.' }, { id: 'q4_2', text: '저활성(무기력)일 때 에너지를 깨우는 루틴이 있다.' }, { id: 'q4_3', text: '집중이 흐트러질 때 다음 행동 1개를 정한다.' }],</p>
+<p class="p1"><span class="Apple-converted-space">    </span>'CH5': [{ id: 'q5_1', text: '실수했을 때 자신에게 모진 말을 줄일 수 있다.' }, { id: 'q5_2', text: '친한 친구에게 하듯 나에게 말한다.' }, { id: 'q5_3', text: '감정을 느끼는 나를 비난하지 않는다.' }],</p>
+<p class="p1"><span class="Apple-converted-space">    </span>'CH6': [{ id: 'q6_1', text: '불편한 대화에서 사실/느낌/욕구/요청을 구분한다.' }, { id: 'q6_2', text: '거절을 미루지 않고 대안을 제시한다.' }, { id: 'q6_3', text: '나의 한계/에너지 상태를 공유한다.' }],</p>
+<p class="p1">};</p>
+<p class="p2"><br></p>
+<p class="p2"><br></p>
+<p class="p1">// --- src/lib/db.ts (localStorage 시뮬레이션) ---</p>
+<p class="p1">const db = {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>get: async (key) =&gt; { try { const i = window.localStorage.getItem(key); return i ? JSON.parse(i) : undefined; } catch (e) { console.error(e); return undefined; } },</p>
+<p class="p1"><span class="Apple-converted-space">  </span>set: async (key, value) =&gt; { try { window.localStorage.setItem(key, JSON.stringify(value)); } catch (e) { console.error(e); } },</p>
+<p class="p1">};</p>
+<p class="p2"><br></p>
+<p class="p1">const saveAssessmentResult = (result) =&gt; db.set(`assessment_result-${result.chapterId}`, result);</p>
+<p class="p1">const getAllAssessmentResults = async () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const results = {};</p>
+<p class="p1"><span class="Apple-converted-space">    </span>for (const chapter of assessmentChapters) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const result = await db.get(`assessment_result-${chapter.id}`);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (result) results[chapter.id] = result;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>return results;</p>
+<p class="p1">}</p>
+<p class="p1">const saveEntry = (entry) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>db.set(`entry-${entry.id}`, entry);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>db.set('latest_entry_id', entry.id);</p>
+<p class="p1">};</p>
+<p class="p2"><br></p>
+<p class="p1">// --- 목업 데이터 설정 함수 ---</p>
+<p class="p1">const setupMockData = async () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const isMockDataSetup = await db.get('mock_data_setup_complete');</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if (isMockDataSetup) return;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const mockEntry = { id: 'entry-mock-1', userId: 'user-mira', ts: new Date().toISOString(), primaryEmotion: '편안함', emotionDetail: '만족', intensity: 4, triggers: ['좋은 날씨'], body: ['몸이 가벼움'] };</p>
+<p class="p1"><span class="Apple-converted-space">    </span>await saveEntry(mockEntry);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>await saveAssessmentResult({ chapterId: 'CH1', totalScore: 32, level: 'Clear' });</p>
+<p class="p1"><span class="Apple-converted-space">    </span>await saveAssessmentResult({ chapterId: 'CH2', totalScore: 25, level: 'Growing' });</p>
+<p class="p1"><span class="Apple-converted-space">    </span>await db.set('mock_data_setup_complete', true);</p>
+<p class="p1">};</p>
+<p class="p2"><br></p>
+<p class="p1">// --- 공용 UI 컴포넌트 ---</p>
+<p class="p1">const Card = ({ children, className = '' }) =&gt; (&lt;div className={`bg-white dark:bg-slate-800 rounded-2xl shadow-soft p-6 sm:p-8 ${className}`}&gt;{children}&lt;/div&gt;);</p>
+<p class="p1">const Button = ({ children, onClick, className = '', variant = 'default' }) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const variants = {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>default: 'bg-indigo-600 text-white hover:bg-indigo-700',</p>
+<p class="p1"><span class="Apple-converted-space">        </span>secondary: 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-50 hover:bg-slate-200 dark:hover:bg-slate-600',</p>
+<p class="p1"><span class="Apple-converted-space">        </span>ghost: 'hover:bg-slate-100 dark:hover:bg-slate-700',</p>
+<p class="p1"><span class="Apple-converted-space">    </span>};</p>
+<p class="p1"><span class="Apple-converted-space">    </span>return (&lt;button onClick={onClick} className={`px-4 py-2 rounded-lg font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 ${variants[variant]} ${className}`}&gt;{children}&lt;/button&gt;);</p>
+<p class="p1">};</p>
+<p class="p2"><br></p>
+<p class="p1">// --- 페이지별 컴포넌트 ---</p>
+<p class="p2"><br></p>
+<p class="p1">// 1. 홈 페이지</p>
+<p class="p1">const HomePage = ({ setCurrentPage }) =&gt; (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div className="text-center max-w-md mx-auto"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;h1 className="text-4xl font-bold text-slate-800 dark:text-slate-100 mb-2"&gt;마음팔레트 🎨&lt;/h1&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;p className="text-slate-600 dark:text-slate-400 mb-12"&gt;오늘 하루 어땠나요? 당신의 마음을 기록하고 돌봐주세요.&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div className="space-y-4"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;Button onClick={() =&gt; setCurrentPage('check-in')} className="w-full !py-3 !text-lg"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>오늘의 마음 체크인하기</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/Button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;Button onClick={() =&gt; setCurrentPage('assessment')} className="w-full !py-3 !text-lg" variant="secondary"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>마음 근력 진단하기</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/Button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">             </span>&lt;Button onClick={() =&gt; setCurrentPage('report')} className="w-full mt-8" variant="ghost"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>최근 리포트 보기</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/Button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1">);</p>
+<p class="p2"><br></p>
+<p class="p1">// 2. 체크인 페이지</p>
+<p class="p1">const CheckInPage = ({ onComplete }) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const [step, setStep] = useState(1);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const [entry, setEntry] = useState({ primaryEmotion: '', intensity: 5, triggers: [], body: [], emotionDetail: '' });</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>const EmotionPaletteWheel = ({ onSelectEmotion }) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const emotions = [ { name: '기쁨', color: '#FFD700' }, { name: '설렘', color: '#FFA500' }, { name: '분노', color: '#DC143C' }, { name: '슬픔', color: '#6495ED' }, { name: '불안', color: '#9370DB' }, { name: '편안', color: '#3CB371' }];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div className="flex justify-center items-center my-8"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;svg width="300" height="300" viewBox="0 0 300 300"&gt;{emotions.map((emotion, i) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>const angle = (i / emotions.length) * 2 * Math.PI - Math.PI / 2;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>const x = 150 + 120 * Math.cos(angle); const y = 150 + 120 * Math.sin(angle);</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>return (&lt;g key={emotion.name} onClick={() =&gt; onSelectEmotion(emotion.name)} className="cursor-pointer group"&gt;&lt;circle cx={x} cy={y} r="40" fill={emotion.color} className="transition-transform duration-200 group-hover:scale-110"/&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;text x={x} y={y} textAnchor="middle" dy="0.3em" className="text-sm font-bold pointer-events-none select-none" fill="#fff"&gt;{emotion.name}&lt;/text&gt;&lt;/g&gt;);})}</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/svg&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>};</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const IntensitySlider = ({ value, onChange }) =&gt; (&lt;div className="w-full my-6"&gt;&lt;label htmlFor="intensity" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"&gt;감정 강도: {value} / 10&lt;/label&gt;&lt;input id="intensity" type="range" min="0" max="10" step="1" value={value} onChange={(e) =&gt; onChange(parseInt(e.target.value, 10))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer dark:bg-slate-700"/&gt;&lt;/div&gt;);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const TagChips = ({ title, tags, selectedTags, onToggleTag }) =&gt; (&lt;div className="my-6"&gt;&lt;h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-3"&gt;{title}&lt;/h3&gt;&lt;div className="flex flex-wrap gap-2"&gt;{tags.map(tag =&gt; (&lt;button key={tag} onClick={() =&gt; onToggleTag(tag)} className={`px-3 py-1.5 text-sm rounded-full transition-colors ${selectedTags.includes(tag) ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-700 hover:bg-slate-200'}`}&gt;{tag}&lt;/button&gt;))}&lt;/div&gt;&lt;/div&gt;);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>const handleSelectEmotion = (emotion) =&gt; { setEntry(prev =&gt; ({ ...prev, primaryEmotion: emotion })); setStep(2); };</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const handleIntensityChange = (value) =&gt; setEntry(prev =&gt; ({ ...prev, intensity: value }));</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const handleToggleTag = (tag, type) =&gt; setEntry(prev =&gt; ({ ...prev, [type]: prev[type].includes(tag) ? prev[type].filter(t =&gt; t !== tag) : [...prev[type], tag] }));</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const submitCheckIn = () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const fullEntry = { ...entry, id: `entry-${Date.now()}`, userId: 'user-mira', ts: new Date().toISOString() };</p>
+<p class="p1"><span class="Apple-converted-space">        </span>saveEntry(fullEntry);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>onComplete();</p>
+<p class="p1"><span class="Apple-converted-space">    </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;Card className="max-w-xl mx-auto"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{step === 1 &amp;&amp; (&lt;div&gt;&lt;h2 className="text-2xl font-bold text-center mb-4"&gt;지금 어떤 감정을 느끼시나요?&lt;/h2&gt;&lt;EmotionPaletteWheel onSelectEmotion={handleSelectEmotion} /&gt;&lt;/div&gt;)}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{step === 2 &amp;&amp; (&lt;div&gt;&lt;h2 className="text-2xl font-bold text-center mb-6"&gt;선택한 감정: &lt;span className="text-indigo-600"&gt;{entry.primaryEmotion}&lt;/span&gt;&lt;/h2&gt;&lt;IntensitySlider value={entry.intensity} onChange={handleIntensityChange} /&gt;&lt;Button onClick={() =&gt; setStep(3)} className="mt-8 w-full"&gt;다음&lt;/Button&gt;&lt;/div&gt;)}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{step === 3 &amp;&amp; (&lt;div className="space-y-6"&gt;&lt;h2 className="text-2xl font-bold text-center mb-4"&gt;감정에 영향을 준 것이 있나요?&lt;/h2&gt;&lt;TagChips title="상황이나 사건 (트리거)" tags={['일/공부', '사람 관계', '건강', '미래', '좋은 날씨']} selectedTags={entry.triggers} onToggleTag={(tag) =&gt; handleToggleTag(tag, 'triggers')}/&gt;&lt;TagChips title="몸의 신호" tags={['피곤함', '가슴 답답', '몸이 가벼움', '두통']} selectedTags={entry.body} onToggleTag={(tag) =&gt; handleToggleTag(tag, 'body')}/&gt;&lt;Button onClick={submitCheckIn} className="mt-8 w-full"&gt;리포트 생성하기&lt;/Button&gt;&lt;/div&gt;)}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>);</p>
+<p class="p1">};</p>
+<p class="p2"><br></p>
+<p class="p2"><br></p>
+<p class="p1">// 3. 진단 페이지</p>
+<p class="p1">const AssessmentPage = ({ onComplete }) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const [chapterId, setChapterId] = useState(null);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const [answers, setAnswers] = useState({});</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const [result, setResult] = useState(null);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>if (result) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>return (&lt;Card className="text-center"&gt;&lt;h2 className="text-2xl font-bold mb-4"&gt;{result.chapterTitle} 진단 완료!&lt;/h2&gt;&lt;p className="text-4xl font-bold my-6"&gt;{result.totalScore} / {assessmentQuestions[chapterId].length * 4}&lt;/p&gt;&lt;p className="text-slate-600"&gt;{result.level}&lt;/p&gt;&lt;Button onClick={() =&gt; onComplete()} className="w-full mt-6"&gt;전체 리포트 보기&lt;/Button&gt;&lt;Button onClick={() =&gt; {setResult(null); setChapterId(null);}} className="w-full mt-2" variant="secondary"&gt;다른 챕터 진단하기&lt;/Button&gt;&lt;/Card&gt;);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>if (chapterId) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const questions = assessmentQuestions[chapterId] || [];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const handleAnswer = (qId, score) =&gt; setAnswers(prev =&gt; ({...prev, [qId]: score}));</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const handleSubmit = () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const totalScore = Object.values(answers).reduce((sum, val) =&gt; sum + val, 0);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const level = totalScore &gt; questions.length * 3 ? 'Clear' : totalScore &gt; questions.length * 2 ? 'Growing' : totalScore &gt; questions.length * 1 ? 'Emerging' : 'Seed';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const newResult = { chapterId, chapterTitle: assessmentChapters.find(c=&gt;c.id===chapterId).title, answers, totalScore, level, ts: new Date().toISOString() };</p>
+<p class="p1"><span class="Apple-converted-space">            </span>saveAssessmentResult(newResult);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>setResult(newResult);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>return (&lt;Card&gt;&lt;Button onClick={() =&gt; setChapterId(null)} variant="ghost" className="mb-4"&gt;&lt;ArrowLeft className="inline-block mr-2"/&gt;챕터 선택으로&lt;/Button&gt;&lt;h2 className="text-2xl font-bold text-center mb-6"&gt;{assessmentChapters.find(c=&gt;c.id===chapterId).title}&lt;/h2&gt;&lt;div className="space-y-6"&gt;{questions.map(q =&gt; (&lt;div key={q.id}&gt;&lt;p&gt;{q.text}&lt;/p&gt;&lt;div className="flex justify-between mt-2"&gt;{[0,1,2,3,4].map(score =&gt; &lt;button key={score} onClick={() =&gt; handleAnswer(q.id, score)} className={`w-10 h-10 rounded-full transition-colors ${answers[q.id] === score ? 'bg-indigo-600 text-white' : 'bg-slate-100 hover:bg-slate-200'}`}&gt;{score}&lt;/button&gt;)}&lt;/div&gt;&lt;/div&gt;))}&lt;/div&gt;&lt;Button onClick={handleSubmit} disabled={Object.keys(answers).length &lt; questions.length} className="w-full mt-8"&gt;결과 보기&lt;/Button&gt;&lt;/Card&gt;);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>return (&lt;Card&gt;&lt;h2 className="text-2xl font-bold text-center mb-6"&gt;마음 근력 진단&lt;/h2&gt;&lt;p className="text-center text-slate-600 mb-8"&gt;나의 마음에 대해 더 깊이 이해하기 위한 6가지 챕터를 탐색해보세요.&lt;/p&gt;&lt;div className="space-y-3"&gt;{assessmentChapters.map(c =&gt; &lt;button key={c.id} onClick={()=&gt;setChapterId(c.id)} className="w-full text-left p-4 bg-slate-50 dark:bg-slate-700 rounded-lg hover:bg-slate-100"&gt;&lt;p className="font-semibold"&gt;{c.title}&lt;/p&gt;&lt;p className="text-sm text-slate-500"&gt;{c.description}&lt;/p&gt;&lt;/button&gt;)}&lt;/div&gt;&lt;/Card&gt;);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p2"><br></p>
+<p class="p1">// 4. 원페이지 리포트 (기존 컴포넌트와 동일, onGoHome 프롭 추가)</p>
+<p class="p1">const OnePageReport = ({ latestEntry, assessmentResults, userName, onGoHome }) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const RadarChart = ({ data }) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const size = 280; const center = size / 2; const total = Object.keys(data).length; if(total === 0) return &lt;div className="w-full h-72 bg-slate-100 rounded-lg flex items-center justify-center"&gt;&lt;p&gt;진단 데이터가 없어요.&lt;/p&gt;&lt;/div&gt;;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const points = Object.values(data).map((value, i) =&gt; { const angle = (i / total) * 2 * Math.PI - Math.PI / 2; const score = value.totalScore || 0; const x = center + (score / (assessmentQuestions[value.chapterId].length*4) * (center - 20)) * Math.cos(angle); const y = center + (score / (assessmentQuestions[value.chapterId].length*4) * (center - 20)) * Math.sin(angle); return `${x},${y}`; }).join(' ');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const labels = Object.keys(data).map((key, i) =&gt; { const angle = (i / total) * 2 * Math.PI - Math.PI / 2; const x = center + (center - 5) * Math.cos(angle); const y = center + (center - 5) * Math.sin(angle); return &lt;text key={key} x={x} y={y} fontSize="12" textAnchor="middle" dy="0.3em" className="fill-slate-600 dark:fill-slate-400 font-semibold"&gt;{assessmentChapters.find(c=&gt;c.id===key).title}&lt;/text&gt;; });</p>
+<p class="p1"><span class="Apple-converted-space">        </span>return (&lt;div className="flex justify-center items-center"&gt;&lt;svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}&gt;{ [...Array(4)].map((_, i) =&gt; (&lt;circle key={i} cx={center} cy={center} r={(i + 1) * (center-20)/4} fill="none" className="stroke-slate-200 dark:stroke-slate-700" strokeWidth="1"/&gt;))}{labels}&lt;polygon points={points} className="fill-indigo-500/30 stroke-indigo-600" strokeWidth="2" /&gt;&lt;/svg&gt;&lt;/div&gt;);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>};</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const MicroActionTimer = ({ action, onComplete }) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const { durationSec, title, copy } = action; const [timeLeft, setTimeLeft] = useState(durationSec); const [isActive, setIsActive] = useState(false);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>useEffect(() =&gt; { let interval = null; if (isActive &amp;&amp; timeLeft &gt; 0) { interval = setInterval(() =&gt; setTimeLeft(t =&gt; t - 1), 1000); } else if (timeLeft === 0 &amp;&amp; isActive) { setIsActive(false); onComplete(); } return () =&gt; clearInterval(interval); }, [isActive, timeLeft, onComplete]);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>return (&lt;Card className="text-center bg-indigo-50 dark:bg-slate-700 border border-indigo-200 dark:border-slate-600"&gt;&lt;h3 className="text-lg font-bold text-indigo-800 dark:text-indigo-200"&gt;{title}&lt;/h3&gt;&lt;p className="text-slate-600 dark:text-slate-400 mt-2 mb-6"&gt;{copy}&lt;/p&gt;&lt;div className="text-6xl font-mono font-bold text-indigo-600 dark:text-indigo-400 my-4"&gt;{String(Math.floor(timeLeft / 60)).padStart(2, '0')}:{String(timeLeft % 60).padStart(2, '0')}&lt;/div&gt;&lt;Button onClick={() =&gt; setIsActive(!isActive)} className="w-24"&gt;{isActive ? &lt;Pause className="inline-block"/&gt; : &lt;Play className="inline-block"/&gt;}{isActive ? '일시정지' : '시작'}&lt;/Button&gt;&lt;/Card&gt;);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>};</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const recommendedAction = latestEntry?.intensity &gt;= 7 ? actionItems[1] : actionItems[0];</p>
+<p class="p1"><span class="Apple-converted-space">    </span>return (&lt;div className="max-w-2xl mx-auto space-y-8"&gt;&lt;header className="text-center pt-8"&gt;&lt;h1 className="text-4xl font-bold text-slate-800 dark:text-slate-100"&gt;오늘의 마음 리포트 📝&lt;/h1&gt;&lt;p className="mt-2 text-slate-600 dark:text-slate-400"&gt;{userName}님, 오늘 하루도 수고 많으셨어요.&lt;/p&gt;&lt;/header&gt;&lt;Card&gt;&lt;h2 className="text-2xl font-bold mb-4 flex items-center"&gt;오늘의 마음 요약 {latestEntry?.intensity &gt;= 7 ? '😔' : '😊'}&lt;/h2&gt;&lt;div className="bg-slate-50 dark:bg-slate-700/50 p-6 rounded-xl space-y-4"&gt;&lt;div className="flex justify-between items-baseline"&gt;&lt;span className="text-slate-500"&gt;주요 감정&lt;/span&gt;&lt;span className="text-xl font-bold text-indigo-600 dark:text-indigo-400"&gt;{latestEntry?.primaryEmotion}&lt;/span&gt;&lt;/div&gt;&lt;div className="flex justify-between items-baseline"&gt;&lt;span className="text-slate-500"&gt;감정 강도&lt;/span&gt;&lt;div className="flex items-center gap-2"&gt;&lt;div className="w-32 h-2.5 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden"&gt;&lt;div className="h-full bg-red-400" style={{width: `${(latestEntry?.intensity || 0) * 10}%`}}&gt;&lt;/div&gt;&lt;/div&gt;&lt;span className="font-bold w-6 text-right"&gt;{latestEntry?.intensity}/10&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div className="flex justify-between items-baseline"&gt;&lt;span className="text-slate-500"&gt;영향을 준 것&lt;/span&gt;&lt;span className="font-semibold text-slate-700 dark:text-slate-300"&gt;{latestEntry?.triggers?.join(', ')}&lt;/span&gt;&lt;/div&gt;&lt;div className="flex justify-between items-baseline"&gt;&lt;span className="text-slate-500"&gt;몸의 신호&lt;/span&gt;&lt;span className="font-semibold text-slate-700 dark:text-slate-300"&gt;{latestEntry?.body?.join(', ')}&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/Card&gt;&lt;Card&gt;&lt;h2 className="text-2xl font-bold mb-4 flex items-center"&gt;잠시 쉬어가요 🧘‍♀️&lt;/h2&gt;&lt;p className="text-slate-600 dark:text-slate-400 mb-6"&gt;지금의 감정을 돌보기 위해 잠시 시간을 가져보는 건 어때요? 작은 행동 하나가 큰 변화를 만들 수 있어요.&lt;/p&gt;&lt;MicroActionTimer action={recommendedAction} onComplete={() =&gt; alert("잘 하셨어요! 마음이 한결 편안해졌을 거예요.")} /&gt;&lt;/Card&gt;&lt;Card&gt;&lt;h2 className="text-2xl font-bold mb-2 flex items-center"&gt;나의 성장 기록 🌱&lt;/h2&gt;&lt;p className="text-slate-600 dark:text-slate-400 mb-6"&gt;진단 테스트를 통해 알아본 {userName}님의 마음 근력이에요. 골고루 성장하고 있는지 살펴보세요.&lt;/p&gt;&lt;RadarChart data={assessmentResults} /&gt;&lt;div className="mt-6 space-y-3"&gt;{Object.entries(assessmentResults).map(([key, value]) =&gt; (&lt;div key={key} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg"&gt;&lt;span className="font-semibold text-slate-700 dark:text-slate-300"&gt;{assessmentChapters.find(c=&gt;c.id===key).title}&lt;/span&gt;&lt;div className="flex items-center gap-3"&gt;&lt;span className="text-xs font-bold text-indigo-500"&gt;{value.level}&lt;/span&gt;&lt;span className="font-bold text-slate-800 dark:text-slate-100 w-12 text-right"&gt;{value.totalScore}/{assessmentQuestions[key].length * 4}&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;))}&lt;/div&gt;&lt;/Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div className="text-center py-4"&gt;&lt;Button onClick={onGoHome} variant="secondary"&gt;&lt;HomeIcon className="inline-block mr-2"/&gt;처음으로&lt;/Button&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;);</p>
+<p class="p1">};</p>
+<p class="p2"><br></p>
+<p class="p2"><br></p>
+<p class="p1">// --- 메인 App 컴포넌트 ---</p>
+<p class="p1">export default function App() {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const [currentPage, setCurrentPage] = useState('home'); // home, check-in, assessment, report</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const [isLoading, setIsLoading] = useState(true);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const [reportData, setReportData] = useState({ latestEntry: null, assessmentResults: {}, userName: "미라" });</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>const refreshReportData = useCallback(async () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setIsLoading(true);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const latestEntryId = await db.get('latest_entry_id');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const entry = latestEntryId ? await db.get(`entry-${latestEntryId}`) : null;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const assessments = await getAllAssessmentResults();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setReportData(prev =&gt; ({ ...prev, latestEntry: entry, assessmentResults: assessments }));</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setIsLoading(false);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}, []);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>useEffect(() =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const initialize = async () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>await setupMockData();</p>
+<p class="p1"><span class="Apple-converted-space">            </span>refreshReportData();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>};</p>
+<p class="p1"><span class="Apple-converted-space">        </span>initialize();</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}, [refreshReportData]);</p>
+<p class="p2"><span class="Apple-converted-space">    </span></p>
+<p class="p1"><span class="Apple-converted-space">    </span>const handleFlowComplete = () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>refreshReportData();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setCurrentPage('report');</p>
+<p class="p1"><span class="Apple-converted-space">    </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>const renderPage = () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (isLoading) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>return &lt;div className="flex items-center justify-center h-full text-slate-500"&gt;마음 리포트를 불러오는 중...&lt;/div&gt;;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><span class="Apple-converted-space">        </span></p>
+<p class="p1"><span class="Apple-converted-space">        </span>switch (currentPage) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>case 'check-in': return &lt;CheckInPage onComplete={handleFlowComplete} /&gt;;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>case 'assessment': return &lt;AssessmentPage onComplete={handleFlowComplete} /&gt;;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>case 'report': return &lt;OnePageReport {...reportData} onGoHome={() =&gt; setCurrentPage('home')} /&gt;;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>case 'home':</p>
+<p class="p1"><span class="Apple-converted-space">            </span>default: return &lt;HomePage setCurrentPage={setCurrentPage} /&gt;;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div className="bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-slate-50 min-h-screen font-sans"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;main className="container mx-auto px-4 py-8 md:py-12 flex-grow flex flex-col justify-center"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>{renderPage()}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/main&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;footer className="text-xs text-center text-slate-400 dark:text-slate-500 p-8"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;p&gt;이 앱은 의료적 조언을 대체하지 않습니다. 전문가의 도움이 필요하면 관련 기관에 문의하세요.&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;p className="mt-2"&gt;© 2025 마음팔레트&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/footer&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p2"><br></p>
+</body>
+</html>
